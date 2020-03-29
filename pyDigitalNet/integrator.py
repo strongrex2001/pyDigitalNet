@@ -72,6 +72,8 @@ def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
 
         su += result
         n += 1
+        # TODO: Better Error Estimation
+        # Seems this limiting scheme doesn't work well with MC methods
         if abs(su / n - oldavg) * dx < epsilon:
             nvar += 1
             if nvar >= limit:
@@ -79,4 +81,5 @@ def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
         else:
             nvar = 0
         oldavg = su / n
+    # TODO: Maybe Increase N here?
     raise ValueError("Integration precision can't be met.")
