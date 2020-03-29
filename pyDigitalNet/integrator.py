@@ -34,7 +34,7 @@ def get_n(epsilon, base):
     return naive_next_prime(int(-numpy.log(epsilon) / numpy.log(base)))
 
 
-def integrate_basic(func, ranges, epsilon=1e-8):
+def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
     """
     Integrates numerically a n-dim function.
 
@@ -46,6 +46,10 @@ def integrate_basic(func, ranges, epsilon=1e-8):
       Ranges of each variable.
     epsilon: float
       Required precision. (may be estimated in some situations)
+    limit: int
+      If variance < `epsilon`
+      holds for continuously `limit` times of evaluation,
+      the result is returned.
 
     Returns
     -------
@@ -61,15 +65,18 @@ def integrate_basic(func, ranges, epsilon=1e-8):
     Cs = faure_generating_matrices(s, get_n(epsilon, b), b)
     digs = digital_sequence(b, Cs)
     dx = numpy.prod(ranges[:, 1] - ranges[:, 0])
+    nvar = 0
     for i, x in enumerate(digs):
-        if i > 5:
-            if abs(su / n - oldavg) * dx < epsilon:
-                return su / n * dx
-            oldavg = su / n
-
         x_d = x * (ranges[:, 1] - ranges[:, 0]) + ranges[:, 0]
         result = func(x_d)
 
         su += result
         n += 1
+        if abs(su / n - oldavg) * dx < epsilon:
+            nvar += 1
+            if nvar >= limit:
+                return su / n * dx
+        else:
+            nvar = 0
+        oldavg = su / n
     raise ValueError("Integration precision can't be met.")
