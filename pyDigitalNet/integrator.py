@@ -30,8 +30,8 @@ from .digital_sequences import digital_sequence
 from .sequences.faure import faure_generating_matrices, naive_next_prime
 
 
-def get_n(epsilon, base):
-    return naive_next_prime(int(-numpy.log(epsilon) / numpy.log(base)))
+def get_n(epsilon, base, limit):
+    return naive_next_prime(int(-numpy.log(epsilon / limit) / numpy.log(base)))
 
 
 def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
@@ -62,7 +62,7 @@ def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
     su = 0.0
     oldavg = numpy.nan
     b = naive_next_prime(s)
-    Cs = faure_generating_matrices(s, get_n(epsilon, b), b)
+    Cs = faure_generating_matrices(s, get_n(epsilon, b, limit), b)
     digs = digital_sequence(b, Cs)
     dx = numpy.prod(ranges[:, 1] - ranges[:, 0])
     nvar = 0
