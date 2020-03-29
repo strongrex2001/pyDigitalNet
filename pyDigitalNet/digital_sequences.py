@@ -71,4 +71,4 @@ def digital_sequence(b, Cs):
         # Matrix Transform
         xi = numpy.matmul(Cs, eta) % b
         # Invert Representation
-        yield numpy.dot(xi, weights)
+        yield numpy.matmul(xi, weights)
