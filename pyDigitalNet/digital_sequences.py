@@ -54,18 +54,21 @@ def digital_sequence(b, Cs):
       see the documentation of this module.
     """
     N = Cs.shape[1]
-    Cs = numpy.transpose(Cs, (0, 2, 1))
     weights = numpy.zeros((N,))
     for i in range(N):
         weights[i] = b ** (-i - 1)
+    eta = numpy.zeros((N,), dtype=Cs.dtype)
     for h in range(1, b ** N):
         # B-adic Representation
         # TODO: Use Matmul and Modular Inversion for better performance
-        eta = numpy.zeros((N,), dtype=Cs.dtype)
+        eta[0] += 1
         for i in range(N):
-            eta[i] = h % b
-            h //= b
+            if eta[i] >= b:
+                eta[i] -= b
+                eta[i + 1] += 1
+            else:
+                break
         # Matrix Transform
-        xi = numpy.matmul(eta, Cs) % b
+        xi = numpy.matmul(Cs, eta) % b
         # Invert Representation
         yield numpy.dot(xi, weights)
