@@ -65,9 +65,11 @@ def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
     Cs = faure_generating_matrices(s, get_n(epsilon, b, limit), b)
     digs = digital_sequence(b, Cs)
     dx = numpy.prod(ranges[:, 1] - ranges[:, 0])
+    shift = numpy.random.uniform(size=[s])
     nvar = 0
     for i, x in enumerate(digs):
-        x_d = x * (ranges[:, 1] - ranges[:, 0]) + ranges[:, 0]
+        x_s = (x + shift) % 1.0
+        x_d = x_s * (ranges[:, 1] - ranges[:, 0]) + ranges[:, 0]
         result = func(x_d)
 
         su += result
