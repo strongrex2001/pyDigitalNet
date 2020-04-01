@@ -8,6 +8,14 @@ Integrator
 | This module provides main APIs for numerical integration.
 | NOTICE: This package is in preview. APIs are subject to change.
 
+References
+----------
+| [1]
+  Tuffin, B. (2004).
+  Randomization of Quasi-Monte Carlo Methods for Error Estimation:
+  Survey and Normal Approximation, Monte Carlo Methods and Applications,
+  10(3-4), 617-628. doi: https://doi.org/10.1515/mcma.2004.10.3-4.617
+
 License
 -------
    Copyright 2020 eliphat@sjtu.edu.cn
@@ -30,11 +38,32 @@ from .digital_sequences import digital_sequence
 from .sequences.faure import faure_generating_matrices, naive_next_prime
 
 
-def get_n(epsilon, base, limit):
-    return naive_next_prime(int(-numpy.log(epsilon / limit) / numpy.log(base)))
+def get_n(epsilon, base):
+    return int(-numpy.log(epsilon) / numpy.log(base)) * 2
 
 
-def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
+def welford_update(stats, current):
+    """
+    Welford's Algorithm
+
+    References
+    ----------
+    | [1]
+      B. P. Welford (1962),  Note on a Method for Calculating
+      Corrected Sums of Squares and Products, Technometrics,
+      4:3, 419-420, DOI: 10.1080/00401706.1962.10490022
+    """
+    (n, mean, M2) = stats
+    n += 1
+    d1 = current - mean
+    mean += d1 / n
+    d2 = current - mean
+    M2 += d1 * d2
+
+    return (n, mean, M2)
+
+
+def integrate_basic(func, ranges, epsilon=1e-8, robust_coeff=3):
     """
     Integrates numerically a n-dim function.
 
@@ -58,30 +87,21 @@ def integrate_basic(func, ranges, epsilon=1e-8, limit=10):
     """
     ranges = numpy.array(ranges, copy=False)
     s = ranges.shape[0]
-    n = 0
-    su = 0.0
-    oldavg = numpy.nan
     b = naive_next_prime(s)
-    Cs = faure_generating_matrices(s, get_n(epsilon, b, limit), b)
-    digs = digital_sequence(b, Cs)
+    N = get_n(epsilon, b)
+    Cs = faure_generating_matrices(s, N, b)
     dx = numpy.prod(ranges[:, 1] - ranges[:, 0])
-    shift = numpy.random.uniform(size=[s])
-    nvar = 0
-    for i, x in enumerate(digs):
-        x_s = (x + shift) % 1.0
-        x_d = x_s * (ranges[:, 1] - ranges[:, 0]) + ranges[:, 0]
-        result = func(x_d)
+    n = 0
+    su = numpy.zeros([robust_coeff])
+    shifts = numpy.random.uniform(size=[robust_coeff, s])
+    tar_std = epsilon / dx
+    for x in digital_sequence(b, Cs):
+        for i, shift in enumerate(shifts):
+            x_s = (x + shift) % 1.0
+            x_d = x_s * (ranges[:, 1] - ranges[:, 0]) + ranges[:, 0]
+            su[i] += func(x_d)
 
-        su += result
         n += 1
-        # TODO: Better Error Estimation
-        # Seems this limiting scheme doesn't work well with MC methods
-        if abs(su / n - oldavg) * dx < epsilon:
-            nvar += 1
-            if nvar >= limit:
-                return su / n * dx
-        else:
-            nvar = 0
-        oldavg = su / n
-    # TODO: Maybe Increase N here?
+        if n > 2 and numpy.std(su) < tar_std * (n - 1):
+            return numpy.mean(su) / n * dx
     raise ValueError("Integration precision can't be met.")

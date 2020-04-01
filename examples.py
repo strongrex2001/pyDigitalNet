@@ -8,6 +8,7 @@ import pyDigitalNet
 import numpy
 import scipy.integrate as iint
 
+
 pi = numpy.pi
 
 
@@ -16,11 +17,11 @@ def tri(x):
 
 
 def sin(x):
-    return numpy.sin(numpy.prod(x))
+    return numpy.sin(numpy.prod(numpy.arange(1, 4) / x))
 
 
 def qsin(*a):
-    return numpy.sin(numpy.prod(a))
+    return numpy.sin(numpy.prod(numpy.arange(1, 4) / a))
 
 
 def qua(x):
@@ -28,6 +29,6 @@ def qua(x):
 
 
 # print(pyDigitalNet.integrate_basic(tri, [[0, 2]]))
-print(pyDigitalNet.integrate_basic(sin, [[0, 2]] * 4, 1e-4))
-print(iint.nquad(qsin, [(0, 2)] * 4,
+print(pyDigitalNet.integrate_basic(sin, [[0.5, 2]] * 3, 1e-4))
+print(iint.nquad(qsin, [(0.5, 2)] * 3,
                  opts={'epsabs': 1e-4, 'epsrel': 1e-4}))
